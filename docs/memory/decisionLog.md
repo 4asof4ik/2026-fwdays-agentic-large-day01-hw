@@ -63,15 +63,6 @@
 
 ---
 
-## [2026-03-26] — TypeScript baseline
-
-* **Context**: Large surface area and public types for library consumers.
-* **Decision**: **TypeScript 5.9** with **`"strict": true`** (and shared base config); **`react-jsx`**, **ESNext** modules, **`allowJs`** at repo root where applicable.
-* **Rationale**: Catch regressions early; support declaration emit for **`@excalidraw/excalidraw`** builds.
-* **Consequences**: `tsc` is part of standard quality gates (`test:typecheck` / `test:all`). Some legacy JS remains allowed at root policy level.
-
----
-
 ## [2026-03-26] — Global and editor-adjacent state: Jotai with isolation
 
 * **Context**: Multiple editor instances and host-injected UI need shared reactive state without a single global Redux store.
@@ -114,24 +105,6 @@
 * **Decision**: **`radix-ui`** as the **component primitive** layer where used in the library.
 * **Rationale**: Headless, accessible patterns without prescribing a full design system.
 * **Consequences**: Version upgrades must be regression-tested around focus traps and portal behavior inside the editor.
-
----
-
-## [2026-03-26] — Canvas and media stack
-
-* **Context**: Hand-drawn aesthetic, freehand input, image handling, and text/diagram tooling.
-* **Decision**: **`roughjs`**, **`perfect-freehand`**, **`pica`**, PNG chunk utilities, **`fractional-indexing`**, **`browser-fs-access`**; structured text via **CodeMirror 6** and **`@lezer/*`**; diagram import via **`@excalidraw/mermaid-to-excalidraw`**.
-* **Rationale**: Match product goals (sketchy rendering, pressure-sensitive strokes, import pipelines).
-* **Consequences**: Performance tuning stays sensitive to canvas and worker usage; heavy dependencies increase bundle scrutiny (size-limit tooling in package devDeps).
-
----
-
-## [2026-03-26] — Persistence and collaboration without an app-owned SQL database
-
-* **Context**: Offline-first editing, optional sync, and shared sessions.
-* **Decision**: **No first-party relational DB** in-repo. Client persistence uses **`idb-keyval`** (IndexedDB); cloud paths use **Firebase 11**; realtime collaboration uses **`socket.io-client`** against configurable **`VITE_*`** backends; optional **Sentry** for errors.
-* **Rationale**: Aligns with a front-end-centric repo: backends are configured via environment, not shipped as a monolithic server here.
-* **Consequences**: Data model and auth rules live in Firebase/project config and external services; local-only flows must handle quota and conflict reconciliation in app code.
 
 ---
 

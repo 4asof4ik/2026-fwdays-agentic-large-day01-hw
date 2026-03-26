@@ -6,74 +6,67 @@ This glossary defines **ubiquitous language** for the Excalidraw monorepo: the b
 
 ## Core entities
 
-### ExcalidrawElement
+### Element
+- **Definition**: **Element** is the required generic term for **scene-level serializable object data** (shape, text, image, frame, embed, etc.) used as the source of truth for rendering, export, history, and collaboration. Conceptually it is close to `ExcalidrawElement`, but in this glossary **Element** is the umbrella domain term for any scene element data model.
+- **Key Files**: `packages/element/src/types.ts`, `packages/element/src/renderElement.ts`, `packages/excalidraw/components/App.tsx`, `packages/element/src/Scene.ts`
+- **Do not confuse with**: `Element` in this glossary means **domain scene data**, not a **UI element** (`HTMLElement`) and not a **React element** (`JSX.Element` / virtual node).
 
+### ExcalidrawElement
 - **Definition**: A **serializable record** representing one drawable object on the canvas (shape, line, arrow, text, image, frame, embed, etc.). The union is discriminated by `type`. Each instance carries geometry (`x`, `y`, `width`, `height`, `angle`), visual style (`strokeColor`, `fillStyle`, `roughness`, …), identity and collaboration fields (`id`, `version`, `versionNonce`, optional fractional `index`), structure (`groupIds`, `frameId`, `boundElements`), flags (`isDeleted`, `locked`), and optional `link` / `customData`. Elements are intended to be **peer-shareable** without peer-local fields.
 - **Key Files**: `packages/element/src/types.ts`, `packages/element/src/renderElement.ts`, `packages/excalidraw/components/App.tsx`
 - **Distinction**: Unlike a generic DOM or React “element,” here **Element** always means **scene data**—the authoritative model for what gets drawn, exported, and synced—not a UI component instance.
 
 ### OrderedExcalidrawElement / NonDeleted
-
 - **Definition**: **`OrderedExcalidrawElement`** is an `ExcalidrawElement` whose `index` (fractional index string) is **non-null**, consistent with stable ordering in the scene array. **`NonDeleted<T>`** narrows `isDeleted` so the element counts as present for hit-testing, rendering, and most editing operations. **`NonDeletedExcalidrawElement`** is the common working set type for the live canvas.
 - **Key Files**: `packages/element/src/types.ts`, `packages/element/src/Scene.ts`, `packages/element/src/index.ts` (re-exports / guards)
 - **Distinction**: “Ordered” refers to **fractional indexing for z-order and merge**, not TypeScript’s `Array.sort` outcome alone; “non-deleted” is a **tombstone pattern** (soft delete), not physical removal from history-aware structures.
 
 ### Scene
-
 - **Definition**: The **authoritative container** for all scene elements: ordered lists, `SceneElementsMap` / `NonDeletedSceneElementsMap`, selection helpers, and invalidation (`sceneNonce`, `onUpdate` subscribers). `replaceAllElements` reconciles array order with fractional indices and rebuilds maps. The scene is the **source of truth** for “what is on the board,” while transient pointer/tool state lives in `AppState`.
 - **Key Files**: `packages/element/src/Scene.ts`, `packages/excalidraw/components/App.tsx`, `packages/excalidraw/scene/Renderer.ts`
 - **Distinction**: Unlike a generic “scene graph” in game engines, this **Scene** is tuned for **2D canvas editing**, **soft deletes**, **group/frame membership**, and **collaboration-friendly** element maps.
 
 ### SceneElementsMap / NonDeletedSceneElementsMap
-
 - **Definition**: **Branded** `Map` types from element `id` to **ordered** elements. `SceneElementsMap` includes deleted elements; `NonDeletedSceneElementsMap` filters them. They represent the **full** current scene (not arbitrary subsets) when typed as scene-level maps.
 - **Key Files**: `packages/element/src/types.ts`, `packages/element/src/Scene.ts`, `packages/excalidraw/history.ts`
 - **Distinction**: Unlike a plain `Record<string, Element>`, these maps are **typed guarantees** for algorithms (history, binding, export) that require **complete** id→element lookups.
 
 ### Frame / Magic frame
-
 - **Definition**: **`ExcalidrawFrameElement`** (`type: "frame"`) and **`ExcalidrawMagicFrameElement`** (`type: "magicframe"`) are **container-like** shapes with a `name`. Other elements reference a frame via `frameId`. **Frame rendering** options in `AppState` control clipping, labels, and outlines. Magic frames tie into **diagram-generation** flows (e.g. AI-assisted layouts) as a distinct product surface from ordinary frames.
 - **Key Files**: `packages/element/src/types.ts`, `packages/excalidraw/actions/actionFrame.ts`, `packages/excalidraw/types.ts` (`frameRendering`, `frameToHighlight`)
 - **Distinction**: Here **Frame** is a **first-class spatial container** with export and UI semantics, not a video or animation “frame.”
 
 ### ExcalidrawLinearElement (line / arrow)
-
 - **Definition**: Polyline-style elements with `points` in **element-local** coordinates, optional **`startBinding` / `endBinding`** (`FixedPointBinding`), and arrowheads. **`ExcalidrawArrowElement`** adds elbow routing (`elbowed`, `fixedSegments`, …). Lines may be **polygonal** (`polygon` on line subtype). These types drive hit-testing, binding, and path rendering.
 - **Key Files**: `packages/element/src/types.ts`, `packages/element/src/linearElementEditor.ts`, `packages/element/src/binding.ts`
 - **Distinction**: “Linear” means **polyline geometry managed by the editor**, not “linear” as in linear algebra or linear time complexity.
 
 ### LinearElementEditor
-
 - **Definition**: A **rich editor state object** (not a React component) for the currently manipulated linear element: selected point indices, drag state, hover indices, binding focus (`start`/`end`), elbow flags, `isEditing`, etc. Stored on `AppState.selectedLinearElement` and constructed when entering linear edit mode.
 - **Key Files**: `packages/element/src/linearElementEditor.ts`, `packages/element/src/selection.ts`, `packages/excalidraw/types.ts` (`AppState.selectedLinearElement`)
 - **Distinction**: Despite the name, it is **session state for editing one linear element**, not a general-purpose “editor” class for the whole app.
 
 ### Bindable element / Binding / BoundElement
-
 - **Definition**: **`ExcalidrawBindableElement`** is the union of shapes (and select other types) that **arrows may attach to**. **`FixedPointBinding`** stores the target id, a **normalized anchor** (`fixedPoint`), and **`BindMode`** (`inside` | `orbit` | `skip`) controlling how the arrow meets the shape. **`BoundElement`** on a host lists **attached** arrows/text (`type` discriminant). **`suggestedBinding`** in `AppState` previews a candidate bind while drawing.
 - **Key Files**: `packages/element/src/types.ts`, `packages/element/src/binding.ts`, `packages/excalidraw/types.ts` (`isBindingEnabled`, `suggestedBinding`)
 - **Distinction**: This is **domain-specific arrow attachment**, not data binding in the MVVM/React sense.
 
 ### Text element / Text container
-
 - **Definition**: **`ExcalidrawTextElement`** stores `text`, typography, alignment, `lineHeight`, and optional **`containerId`** when text lives inside a **bindable** shape (`ExcalidrawTextContainer`). **Bound text** resizing and position are coordinated with the container and linear hosts via helpers in `textElement.ts` and `LinearElementEditor`.
 - **Key Files**: `packages/element/src/types.ts`, `packages/element/src/textElement.ts`, `packages/excalidraw/wysiwyg/textWysiwyg.tsx`
 - **Distinction**: “Container” here is a **specific geometric host shape**, not a generic UI container component.
 
 ### Image element / FileId / BinaryFiles
-
 - **Definition**: **`ExcalidrawImageElement`** references binary payload via **`FileId`** (branded string), with `status` (`pending` | `saved` | `error`), `scale`, and optional **`crop`**. **`BinaryFiles`** maps ids to **`BinaryFileData`** (`dataURL`, `mimeType`, timestamps, …). The scene holds **references**; heavy bytes live in the files map for lazy loading and persistence.
 - **Key Files**: `packages/element/src/types.ts`, `packages/excalidraw/types.ts` (`BinaryFileData`, `BinaryFiles`), `excalidraw-app/data/FileManager.ts`
 - **Distinction**: **`FileId`** identifies **embedded image blobs in app state**, not necessarily an OS file path or `FileSystemFileHandle` (which is separate on `AppState.fileHandle`).
 
 ### Embeddable / Iframe element
-
 - **Definition**: **`ExcalidrawEmbeddableElement`** and **`ExcalidrawIframeElement`** (and **`ExcalidrawIframeLikeElement`**) represent **embedded web content** on canvas, with `IframeData` describing intrinsic size, link vs `srcdoc`, sandbox flags, etc. **`activeEmbeddable`** in `AppState` tracks hover/active interaction for embedding UX.
 - **Key Files**: `packages/element/src/types.ts`, `packages/excalidraw/types.ts` (`activeEmbeddable`), `packages/element/src/shape.ts`
 - **Distinction**: These are **canvas-first embeds** with export/host constraints, not arbitrary iframe usage in the shell UI.
 
 ### Library / LibraryItem
-
 - **Definition**: **`LibraryItem`** (v2) is a reusable **saved bundle** of `NonDeleted` elements with `id`, `status` (`published` | `unpublished`), metadata (`name`, `created`, optional `error`). **`LibraryItems`** is an array of such items. The shape library UI and persistence layers migrate between v1 (flat element arrays) and v2.
 - **Key Files**: `packages/excalidraw/types.ts`, `packages/excalidraw/data/library.ts`, `packages/excalidraw/data/types.ts` (`ExportedLibraryData`)
 - **Distinction**: This **Library** is a **user’s reusable stencil collection**, not an npm package or code library.
@@ -83,19 +76,16 @@ This glossary defines **ubiquitous language** for the Excalidraw monorepo: the b
 ## System state and logic
 
 ### AppState
-
 - **Definition**: The large **React state** object on the editor `App` class: viewport (`scrollX/Y`, `zoom`, dimensions, offsets), **active tool** and tool preferences, **selection** (`selectedElementIds`, `selectedGroupIds`, `editingGroupId`), **transient creation/edit** (`newElement`, `multiElement`, `selectionElement`, `resizingElement`, `editingTextElement`, `selectedLinearElement`), UI (`openDialog`, `openSidebar`, `contextMenu`, `toast`, `theme`, modes like zen/view/grid), collaboration maps (`collaborators`, `userToFollow`, `followedBy`), snapping, search matches, cropping, and more. It is **merged** from actions and **observed** in part by the `Store` for history.
 - **Key Files**: `packages/excalidraw/types.ts`, `packages/excalidraw/appState.ts`, `packages/excalidraw/components/App.tsx`
 - **Distinction**: Unlike Redux-style global app config alone, **`AppState` mixes persistent preferences with highly ephemeral interaction state** tied to one editor session.
 
 ### UIAppState / Canvas app state slices
-
 - **Definition**: **`UIAppState`** omits a few low-level fields not needed in all child contexts (e.g. some scroll/cursor fields). **`StaticCanvasAppState`** and **`InteractiveCanvasAppState`** are **readonly projections** of `AppState` fields each canvas layer needs, minimizing prop churn and documenting render responsibilities (static drawing vs overlays, handles, collaborators).
 - **Key Files**: `packages/excalidraw/types.ts`, `packages/excalidraw/context/ui-appState.ts`, `packages/excalidraw/components/canvases/*.tsx`
 - **Distinction**: These are **intentional type slices** for the renderer stack, not separate stores.
 
 ### newElement / multiElement / selectionElement
-
 - **Definition**: **`newElement`**: in-progress shape being drawn from pointer down through move/up. **`multiElement`**: polyline/arrow being built by ** successive clicks** (multi-point mode). **`selectionElement`**: transient rubber-band **selection rectangle** when dragging with the selection tool—distinct from `type: "selection"` elements in older flows. All are **`AppState`** fields driving tool controllers in `App`.
 - **Key Files**: `packages/excalidraw/types.ts`, `packages/excalidraw/components/App.tsx`, `packages/excalidraw/components/canvases/InteractiveCanvas.tsx`
 - **Distinction**: These are **ephemeral construction state**, not committed scene elements until finalized into the `Scene`.
@@ -175,7 +165,7 @@ This glossary defines **ubiquitous language** for the Excalidraw monorepo: the b
 ### ImportedDataState / ExportedDataState
 
 - **Definition**: **`ImportedDataState`** describes a **payload** to hydrate the editor (`elements`, partial `appState`, `files`, `libraryItems`, `scrollToContent`, …). **`ExportedDataState`** is the **JSON export shape** (`type`, `version`, `source`, cleaned `appState`, `elements`, optional `files`). They underpin load/save, clipboard, and API **`updateScene`** flows.
-- **Key Files**: `packages/excalidraw/data/types.ts`, `packages/excalidraw/data/json.ts` (if present), `packages/excalidraw/components/App.tsx`
+- **Key Files**: `packages/excalidraw/data/types.ts`, `packages/excalidraw/data/json.ts`, `packages/excalidraw/components/App.tsx`
 - **Distinction**: Unlike arbitrary JSON blobs, these types are **schema-versioned persistence contracts** for the whiteboard format.
 
 ### Collaborator / SocketId

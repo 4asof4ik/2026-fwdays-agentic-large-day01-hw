@@ -19,8 +19,22 @@
 
 ## Development workflow
 
-- **Tooling**: Vite (`@vitejs/plugin-react`, checker, PWA, SVGR, EJS/html helpers), **ESLint** + **Prettier**, **Vitest** (jsdom, `vitest-canvas-mock`, Testing Library). **lint-staged** + Husky (`prepare`).
-- **Typical commands** (root): `start` (Vite dev), `build`, `build:packages`, `test`, `test:all`, `test:typecheck`, `test:code`, `fix`. Dev port from **`VITE_APP_PORT`** or Vite defaults.
+- **Tooling**:
+  - Vite (`@vitejs/plugin-react`, checker, PWA, SVGR, EJS/html helpers),
+  - **ESLint** +**Prettier**,
+  - **Vitest** (jsdom, `vitest-canvas-mock`, Testing Library),
+  - **lint-staged** + Husky (`prepare`).
+- **Typical commands** (root): (substitute `npm run <script>` / `pnpm <script>` if you don’t use Yarn)
+  - `yarn start` (Vite dev)
+  - `yarn build`
+  - `yarn build:packages`
+  - `yarn test`
+  - `yarn test:all`
+  - `yarn test:typecheck`
+  - `yarn test:code`
+  - `yarn fix`
+  
+  Dev port from **`VITE_APP_PORT`** or Vite defaults.
 - **Full script list, CI notes, and local onboarding** → [docs/technical/dev-setup.md](../technical/dev-setup.md) and root [package.json](../../package.json).
 
 ## Technical constraints (summary)
@@ -37,7 +51,7 @@ All **`VITE_*`** are inlined at build time. Groups: server port, storage/collab 
 
 ## Deployment & runtime
 
-- **Node**: `>=18.0.0` (`engines`). **Vercel**: `vercel.json` → `excalidraw-app/build`. **Docker**: multi-stage Node build + **nginx** static serve.
+- **Node**: `>=18.0.0` (`engines`). **Vercel**: `vercel.json` → `excalidraw-app/build`. **Docker**: multi-stage Node build + **Nginx** static serve.
 - **CI**: `.github/workflows/`. **No** first-party SQL; persistence via **Firebase**, **IndexedDB**, and configured backends.
 
 ## Details

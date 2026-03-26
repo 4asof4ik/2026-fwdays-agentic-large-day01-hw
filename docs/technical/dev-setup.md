@@ -154,7 +154,7 @@ So at minimum before pushing a PR, ensure **`yarn test:other`**, **`yarn test:co
 
 ### Review and CI
 
-- Every PR should have **at least one approval** from a maintainer (team policy).
+- Pull requests may require **at least one maintainer approval** depending on branch protection or organization policies (see your team's GitHub branch protection/contribution policy).
 - Required checks include **Lint** (format + ESLint + TypeScript) and repository-specific workflows (e.g. tests, size limits, coverage PRs) as configured on the GitHub repository.
 
 ---
